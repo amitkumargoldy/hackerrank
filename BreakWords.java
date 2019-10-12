@@ -1,5 +1,8 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class BreakWords {
 
@@ -26,6 +29,7 @@ public class BreakWords {
 
     private Trie trie;
     private List<List<String>> brokenWordList = new ArrayList<>();
+    private Map<String, List<List<String>>> dp = new HashMap<>();
 
     public List<List<String>> breakAllWords(List<String> words) {
         trie = new Trie();
@@ -33,13 +37,17 @@ public class BreakWords {
             for (String word : words)
                 trie.add(word);
 
-            for (String word : words)
-                breakWord(word, 0);
+            for (String word : words) {
+                List<List<String>> brokenWord = breakWord(word, 0);
+                brokenWordList.addAll(brokenWord.stream().filter(e -> e.size() > 1).collect(Collectors.toList()));
+            }
         }
         return brokenWordList;
     }
 
     public List<List<String>> breakWord(String word, int idx) {
+        if (dp.get(word.substring(idx)) != null)
+            return dp.get(word.substring(idx));
         List<List<String>> brokenWord = new ArrayList<>();
         Trie.Node node = trie.root;
         for (int i = idx; i < word.length(); i++) {
@@ -47,20 +55,17 @@ public class BreakWords {
             if (node == null)
                 break;
             if (node.endOfWord) {
-                List<List<String>> breakRemaining;
-                if (i < word.length() - 1) {
-                    breakRemaining = breakWord(word, i + 1);
+                if (i == word.length() - 1) {
+                    brokenWord.add(List.of(word.substring(idx)));
                 } else {
-                    breakRemaining = new ArrayList<>();
-                    breakRemaining.add(List.of(word.substring(idx)));
-                    return breakRemaining;
-                }
-
-                for (List<String> e : breakRemaining) {
-                    List<String> combi = new ArrayList<>();
-                    combi.add(word.substring(0, i + 1));
-                    combi.addAll(e);
-                    brokenWordList.add(combi);
+                    String remainingWord = word.substring(i + 1);
+                    dp.put(remainingWord, breakWord(word, i + 1));
+                    for (List<String> e : dp.get(remainingWord)) {
+                        List<String> combi = new ArrayList<>();
+                        combi.add(word.substring(idx, i + 1));
+                        combi.addAll(e);
+                        brokenWord.add(combi);
+                    }
                 }
             }
 
@@ -70,8 +75,20 @@ public class BreakWords {
 
     public static void main(String[] args) {
         List<String> words = List.of(
-                "harrypotter", "cat", "dog", "harry", "wall", "potter", "aliceinwonderland", "alice", "in",
-                "wonderland", "land", "wonder"
+                "harrypotter",
+                "cat",
+                "dog",
+                "harry",
+                "wall",
+                "potter",
+                "aliceinwonderland",
+                "alice",
+                "alicein",
+                "in",
+                "wonderland",
+                "wondqw",
+                "land",
+                "wonder"
         );
 
         BreakWords breakWords = new BreakWords();
